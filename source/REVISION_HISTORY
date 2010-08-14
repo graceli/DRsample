@@ -1,0 +1,315 @@
+This file contains some of the revision information for the Distributed Replica sampling suite.
+
+Current Maintainers: Chris Neale (chris.neale@utoronto.ca, candrewn@gmail.com) and Grace Li (fullofgrace88@gmail.com)
+Creator: Tomas Rodinger (tom.rodinger@utoronto.ca)
+Contributions: Tomas Rodinger, Ching-Hsing Yu, Chris Neale
+
+ v1.1 (Tom Rodinger June 22 2007)
+  - code to handle the "Umbrella" simulation method has been added to Monte Carlo and Boltzmann jumping functions
+ 
+ v1.1.1 (Chris Neale July 24 2007)         
+  - Modified to use read_input_script_file.h because that is now the most up to date version
+    The changes in that file do not affect this program and were intended for analyse_force_database.cpp
+
+ v1.1.2 (Chris Neale July 12 2007)
+  -fixed bug that affected cancellation for umbrella coordinate by grouping umbrella with spatial 
+   on lines 1191,1733 of v1.1.1
+
+ v1.1.3 (Chris Neale July 13 2007)
+  -fixed bug that affected monte carlo umbrella with circular reaction coordinate. The server now handles 
+   the minimum image convention in determine_new_replica_position_monte_carlo()
+
+ v1.1.4 (Chris Neale July 14 2007)
+  - fixed bug that affected monte carlo umbrella/spatial cancellation [it was inverted in 
+    conditionally_activate_energy_cancellation()]. CN believes that this is also required based on the current
+    implementation of Temperature but without a test system, CN prefers to leave Temperature alone for now.
+    However, users are cautioned to check that cancellation for Temperature is working correctly... if it's not, 
+    all of your replicas will migrate to low temperatures.
+    ****  NO! This was not actually an error. Change it back.
+  - Added some lines to ensure that the cancellation energies will be printed even when loading a snapshot
+    that is already complete (simulation_status==Finished).
+  - Added output of beta in print_energy_cancellation_summary() because it can be useful to debias the data
+  - Modified to use read_input_script_file.h because that is now the most up to date version
+    The changes in that file do not affect this program and were intended for analyse_force_database.cpp
+  - removed stray line of code in analyze_force_database
+
+ Chris Neale July 15 2007 changes to analyze_force_database
+  - Following changes in order that multiple sizes are possible:
+  - pageinfo->width etc now variable not #define'd
+  - rot_trans_regular() and setup_regular() now in external function
+    This change also requires printing "showpage" from Main()
+  - Added print_postscript_page6() to print the integral of the force.
+  - This page is not yet entirely correct
+  - Added a final summary page based on other pages (see end of Main())
+
+ Chris Neale July 20 2007 changes to analyze_force_database
+  - Following changes now assist page4 with circular reaction coordinate
+  - Can now either expand page4 by PBC or simply not show boundary moves
+  - PRODUCTIVITY RATIO is now correct for circular replicas (although unsure about accuracy for anything but monte carlo)
+  - Page4 now also calculates a variety of new quantities regarding transitions.
+  - These transitions and the PRODUCTIVITY RATIO are only output on the first pass throught this routine
+  - It is recommended that this is done once while asking the program to ignore any data from cancellation
+    by passing -1 as the ignorerounds option (autodetect ignore rounds) to only start counting for each
+    replica after that replica has made its first move.
+  - Page6 modified to allow creation of a new histogram and PMF assuming the umbrella user sent the negative system force
+  - Added titles to the plots
+  - Plots now output a self-scaled number of Y values on the Y axis
+  - Uses read_input_script_file_v1.1.1.h (not v1.1) in order to obtain Number of samples per replica step (page5)
+
+ Chris Neale July 24 2007 changes to read_input_script_file.h
+  - added unsigned int Nsamples_per_run to the values returned by read_input_script_file() for use in 
+    analyze_force_database.cpp
+  - This required changes in analyze_force_database.cpp and DR_server.cpp
+
+ Chris Neale Oct 2 2007
+  - added ability to move additional files like the job.force file and store them to the forcedatabase
+  - SendBinFile now returns an integer to flag if the file was not found for use with additional_data files
+
+ Chris Neale Oct 10 2007 changes to analyze_force_database
+  - modified page6 to sum the negative force*d
+  - can now use this program to output the forcedatabase in text format
+
+ Chris Neale Oct 18 2007
+  - allow Temperature simulations to send force 'sample_data'
+  - Made a general function for displaying the graph background for analyze_force_database
+
+ Chris Neale Nov 2 2007 changes to analyze_force_database
+  - Huge overhaul of code. Removed Tom's fitting procedure entirely
+  - No more global variables
+
+ Chris Neale May 29 2008
+  - Fixed the calculation of move energies when the applied force constants are not identical for all umbrellas
+    Tested that this fix worked for Monte Carlo moves. Made the fix for continuous and boltzmann also, but not tested
+  - changed the LIGAND1 LIGAND2 names in read_input_script_file.h
+
+ Chris Neale June 6 2008
+  - Added free() statements for all mallocs (server, client)
+
+ Chris Neale June 7 2008 hanges to analyze_force_database
+  - Beginning to think that this should be done with gnuplot directly, just led by this program.
+  - That's a huge change of directive however. The benifits would be that I could add things like error
+    bars directly. The downside would be things like changing colour with moveto lineto may be impossible.
+
+ v2.0.1 CN Oct 22 2008
+  - Added ability to load in new a-values for a continuation while loading a shanpshot 
+    (previously done for Rowan and Jenny separately)
+  - Fixed bug pointed out by Rowan in which circular did not work correctly when 
+    W1-W0!=W(n-1)-W(n-2)!=W0-W(n-1)+circularSpan
+  - Added call to perror() in error_quit. Note that this is not always a relevant error
+    that is reported if errno was not updated, but it may be relevant. One might later reset errno prior to such calls.
+
+ v2.1 CN Oct 22 2008 - Oct 25 2008
+  - adding vRE to replica_move_type_enum for virtual RE moves
+  - overloaded determine_new_replica_position_monte_carlo() to handle vRE case also, therefore 
+    renamed it to determine_new_replica_position_monte_carlo_or_vre
+  - In this implementation of the method, a virtual move is first taken from a non-self replica.
+    If one can not be found then the virtual move is taken from a self replica
+    If one can not be found then the move is disallowed.
+  - Currently contins a hack near line 657 of DR_server.cpp that disallows vRE moves in the first 200 steps
+
+ v2.1.1 CN Oct 25 2008 - Oct 27 2008
+  - modify the way vre works. In this implementation, we add a new data structure that contains all of the previously
+    used virtual moves. In this data structure there is no memory of the replica number source.
+  - vRE will now work like this:
+    1) a virtual move is first taken from a non-self replica value that has never been used.
+       - The most recently generated such value is used.
+    2) upon using a value for a virtual exchange, it is removed from the main vre data structure and placed
+       in a new secondary data structure that does not remember the replica source.
+    3) If method (1) above does not produce any cancellation values for use, then a value is randomly
+       selected from the seconday data structure. Values in this data structure are never removed.
+  - Removed hack on line 657 of DR_server.cpp that disallows vRE moves in the first 200 steps
+    and replaced by 
+  - Added test for REPLICA_STEP and require it for vRE (previously -1.0 default just happened to work fine).
+  - Added output of the relevant information for the vRE step so that the user can later investigate
+    exactly how the cancellation occurred.
+  - Added vRE data structures to the snapshot with ability to save and load them.
+  - Changed snapshot version to 2.0, but allow people to use this version of the server to load snapshots
+    from version 1.0 if they are not using vRE as they should still be compatible.
+  - Added replica.w_start to allow the replica to start at a different position as defined in the script
+  - Added ability to load in values with which to fill the data structures for a vre run
+    This will be important when I am starting with replicas that do not necessarily fill all of the
+    nominal positions from NNI=2 DR-equilibrated runs.
+
+** CN also test good A-values and bad A-values with a strong enough DRPE ... do I still get the right answer?
+
+ v2.1.2 CN Jan 5,8 2009 
+  - modify the way vRE works. Limit the size of the secondary data structure. Once it is full, start overwriting values.
+    Ideally the size of this list would be user-configurable. Options are to randomly over-write a value once this list
+    is full, but it would be better to cycle through it.
+
+ v2.1.3 CN Jan 10 2009
+  - Add VRE_INITIAL_NOSAVE and VRE_SECONDARY_LIST_LENGTH options to input script file. setting secvre list length <0
+    will result in default size. Added set_secvre_size() function to vre.h to send that size there.
+    NOTE: be sure to use the same size when loading a snapshot --- this is not currently checked.
+  - Modified analyze_force_database so that it utilizes the -e equilFraction in all graphs
+
+ v2.1.4 CN (date?)
+  - Modified the extraction protocol in the tool extractDatabase.c
+
+ v2.1.5 CN May 5 2009
+  - Added ALLOW_REQUEUE to get around the problem cause by the sharcnet test queue. When this option is allowed,
+    then when a client returns a run that has already been given up on, it is assumed that this is the result of
+    test queue interuption and the client nodes will enter the general pool that can be assigned a new job
+    NOTE: this will require some special handling of .xtc files, etc that are not sent through the server but are
+    simply stored by the make_tpr script
+  - Modified the DR_client to allow it to pass the JOB ID on which the client is running from the command line as
+    an optional 5th command line argument. Also modified the DR_server to accept this.
+    This is done on the command line so that the first call to the client from QueuedJob.run can send the JID
+    even when it does not yet have a $job
+
+ v2.1.6 CN May 8-12 2009
+  - added a program, joinFDBs, that will join two forcedatabase files. This can be useful when you move a run 
+    to a new machine and, either accidentally or intentionally, don't have the original forcedatabase file
+    existing at the time of restarting the server.
+    ** In order to do this, CN removed a lot of routines from analyze_force_database.cpp and put them in
+       manipulate_force_database.h
+#################
+NOTE: the above program joinFDBs has not yet been created, nor has the manipulate_force_database.h file been utilized
+#################
+  - Added COPYING file and header information to each of the source files in order to licence this software
+    under the GNU licence.
+  - Significant renaming of all tools in order to make things more clear:
+    DR_client -> DR_client_comm
+    QueuedJob.run -> DR_client_wrapper
+    make_tpr -> DR_client_body
+  - drsub now takes, as the command line argument, the working directory in which DR_client_wrapper is expected to exist
+    Therefore the user can change the name of DR_client_wrapper if they wish. If the user does not want this file to
+    exist in the working directory, then they can hard code the directory and ignore the command line argument
+   
+ v2.1.7 CN May 13 2009
+  - Purpose of startinf 2.1.7 is that CN distributed v2.1.6 to two parties and therefore can't make any more
+    changes to that version number.
+  - Slight modification to documentaion today, but so far no significant changes.
+  - Included the DR_tester scripts in the distribution.
+
+ v2.1.8 CN Nov 24-28 2009
+  - added delete B to the end of client_interaction() to remove my memory leak
+  - pthread_create in wait_for_clients() no longer throws an error_quit, but warns the user and skips that communication.
+  - protected the pthread_create in main() with an error_quit 
+  - Added the ability to shut down the sever after it has been running for a certain period of time
+
+ v2.1.9 CN July 1 2010
+  - Grace Li joins the project (fullofgrace88@gmail.com)
+  - Grace Li created a SVN project for DR based on v2.1.8. This is the first update to that SVN repository.
+  - Added the ability to use one of the new nodes and get rid of an old node. This is useful because the wallclock gets better
+    but this is even more important for the future ability of a mobile server, as the server will need a fresh client to take over.
+    - Added the function drop_one_old_node() and added some code to use this new function, all in DR_server.c
+    - Added getallocleft as a currently unused script to calc the walltime left
+    - Added an entry in replica_struct in read_input_script_file.sh --> bool awaitingDump to use as a mutex so that if 2 new jobs
+      start, they are never both waiting for the same replica to get dumped. This variable is used only in drop_one_old_node().
+    *** This should be protected by some input value so that the user can allow/disallow this process. The fraction of the walltime
+        that must be completed should also be user definable and not hard-coded at 0.2. Finally, is it a problem that the script contains
+        a nodetime and also the submission has a PBS walltime that we expect to be similar?
+
+ v2.1.10: CN July 2 2010
+  - add new variable = defineStartPos to script. If the user adds DEFINE_STARTING_POSITIONS to their script, then the file ./switchStart.txt
+    must exist in the working directory. This file will be read and defines the positions that the replica will start at.
+    This is applied by a call to defineStartingPositions() in DR_server.cpp main
+    * This is well checked, including enough/not too many values + all alpha-numeric
+    * Why bother letting the user specify a name? is it that important?
+  - removed warnings "warning: deprecated conversion from string constant to char*" by adding const to the char *x definition in  
+    functions that I passed a string literal
+  - Added the mode to creation of files via open ", S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)"
+  - Added a message to the compileProg script that we are aware of the error messages: "ignoring return value of ssize_t write"
+  - Added a new variable = cycleClients to script. If the user adds CYCLE_CLIENTS %f then clients can be kicked out in favour of new clients 
+    if the old client has finished %f part of its allocated time already.
+    * This routine will now not be used if a) the user does not specify CYCLE_CLIENTS in the script, or b) the user specifies CYCLE_CLIENTS <= -0.001
+
+ v2.2.0: CN July 3 2010
+  - v2.2 marks the beginning of trying to put the mobile server into the code
+  - added a new command to the scrip "SERVER_TIMELEFT_ENTER_MOBILE_STATE" 
+    that controlls script.mobility_time and sets var.mobile, an enumerated variable that defines the mobility state
+  - Added the const char *DEFINED_START_POS_FILE = "./switchStart.txt" to DR_server.cpp instead of writing out the expected file name each tim
+    There is still no reason to make this configurable by the user
+  - Updated the manual to include DEFINE_STARTING_POSITIONS and CYCLE_CLIENTS
+  - Added examples, scripts, docs to the repository and moved the source into a source/ dir
+  - Grace updated all of this to the repository on scinet
+
+ v2.2.1: CN July 4-13 2010
+  - Added struct node_struct to properly take care of timeouts -- + will really need this to get the mobile server working.
+    NOTE: the previous use of NODETIME was flawed since the replicas are allowed to migrate around nodes.
+  - added struct node_struct nodes to the client bundle
+  - many modifications related to mobility -- it is active but still not fully tested. 
+
+ v2.2.2, 2.2.3, 2.2.4: CN July 14-17 2010
+  - split to new versions every time a run is going and more mods need to be made to the source
+  - disallow upper case characters in the script title (the 2 character identifier)
+  - throw a fatal error if the user starts a new run (no snapshot) but the forcedatabase already exists
+  - return a value from drsub and don't count the submission if it's non-zero.... this should fix the lack of full N starting submission
+    - also try 2x for each submission before giving up. This should help them all to really start at the beginnign of a run
+  - still working to fix the node dumping and server mobility  *** FINALLY SEEMS FIXED IN v2.2.4
+
+ v2.2.5: CN July 18 2010
+  - split here because v2.2.4 seemed pretty stable, but still I want to add time passing so that this will all work over many weeks of stable runtime
+  - reverted to a single analyse_force_database.cpp by including other optional forms in the main program
+    - new -j option to (J)ust output the text database without the .ps file
+    - Never! print the first cumulative page when temperature is the reaction coordinate. For some reason I get a nan on the upper plot.
+      * Ideally I'd like to fix that part...
+    - Also, the individual plots now use the overall min/max range that is stored from an earlier plot
+    - move PROTOCOL_VERSION definition to DR_protocol.h (centralize it) and update the version to 5 because of new TakeTCS
+    - send time information around with the clients + server
+      - new option -t to send server the real start_time of the node its on
+      - new requirements for start_time + JID in DR_client_comm
+    - Don't allow a server to go mobile within its first two job timeouts
+    - Added script option SERVER_TIMEGAIN_ENTER_MOBILE_STATE .. so going mobile must add at least this many seconds to the available time
+      Defaults to zero so it is like it doesn't exist if it is not set
+
+ v2.2.6: CN July 19 2010
+  - get rid of rare problem "Error: cannot add data to the record or write the record into the database until a header has been created"
+    by doing WHAT, exactly?
+  - the problem was when a node expired during the message passing process. These new nodes were still trying to write their data to the 
+    forcedatabase. Now, when (client_status==Error) the ability to access the forcedatabase is turned off.
+
+ v2.2.7: CN July 20 2010
+  - see notebook 13 pg 54/55 regarding the problem of nodes not returning properly from a hang and also loss of track of nodes to jobs
+  - turned ALLOW_REQUEUE into a boolean -- IT WASN'T EVEN WORKING SINCE it's only a flag but I tried to read in a number after it...
+  - fixed the setup when nodes do not requeue by including more in the large else statement for case replica finished so that error conditions
+     don'te execute any of the regular code.
+  - Still seeing Massive error in node allocation (D) when many nodes go down and re-queue at once (can't find an empty node structure).
+
+ v2.2.8: CN July 21 2010
+  - turned "Massive error in node allocation (D)" into a warning that nodes can not be found, and then drop the client
+    But to helpt this not happen, I have doubled the number of available nodes
+  - tried to make the node actions friendly to NNI!=1 ... but this will still need a test
+
+ v2.2.9: CN July 21 2010
+  - get rid of the ability to keep double the number of available nodes. Set it to Nreplicas/nni. See book 13, pg 60 to see the problems this was causing
+
+ v2.2.10: CN July 22 2010
+  - modify drop_one_old_node() because it was looping with an incorrect variable setting for which node to dump
+    (although the dumping itself was still going according to plan).
+  - if I get 1000 failed submission attempts in a row, the submission ability is simply turned off now (#defined 1000)
+  - profiling the time for communications. Seems like the time is spend compressing the restart file prior to sending it
+  - added #define COMPRESS_RESTART false to control if the .rst file is compressed -- reduced comm time from 300 to 12 ms.
+
+ v2.2.11: CN July 29 2010
+  - the old clients are not connecting properly with the new server -- or are they? They seem to be fine in many cases
+  - just need to to fix node resurection? Added replicaN[0]=-1 to resurection *** EXCELLENT !!
+
+ v2.3.0: CN July 30 2010
+  - mod initial client submission to check based on !='S' in place of =='N' to ensure all jobs get started
+
+ v2.3.1: CN August 1-5 2010
+  - added a opt->logdir (-d option to DR_server) so the user can put the log in /dev/shm 
+  - added a -v option to the server, otherwise it runs in non-verbose mode
+    Ideally, I will later allow a signal to the server to turn on and off verbose mode...
+  - finally fixed the issue with clients that would never connect. I have modified the drop_one_node routine to do this
+    specifically, I now sleep on while(node[onode].active && node[onode].awaitingDump) where the awaitingDump takes care of 
+    cases where it did get dumped, but then a different node picked up the one that this client was waiting on.
+
+ v2.3.2: CN August 7 2010
+  - Chris Madill added an extra term to the modTPR programs so that I can now change the force constant
+
+ TODO:
+  - analyzeforcedatabase still giving errors on one of the early plots
+  - analyzeforcedatabase should be able to plot addN by addM (or else I just add some functionality to a script based on extract database)
+  - allow the DR_commander to modify the verbose state of the server and whether or not it submits jobs and to force a mobility move
+  - the ability to load a set of starting positions should be a command line argument, not part of the script file 
+    (important for restarts and therefore for the mobile server)
+  - make some more options user configurable via the script
+  - Write a program to convert zipped to unzipped restart files (and vice versa)
+    This can be done via a single 'client' that connects as each replica to get all the information, then runs a step and then sends the info back
+    Ideally, my compile program can grep the DR_client_comm.cpp source code to compile a zipped version of the communicator
+  - get the node structure working properly with NNI != 1
+  - add signal catching
+

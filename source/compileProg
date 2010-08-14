@@ -1,0 +1,86 @@
+#!/bin/bash
+##  This file is part of Distributed Replica.
+##  Copyright May 9 2009
+##
+##  Distributed Replica manages a series of simulations that separately sample phase space
+##  and coordinates their efforts under the Distributed Replica Potential Energy Function.
+##  See, for example T. Rodinger, P.L. Howell, and R. Pomès, "Distributed Replica Sampling"
+##  J. Chem. Theory Comput., 2:725 (2006).
+##
+##  Distributed Replica is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+##
+##  Distributed Replica is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+##
+##  You should have received a copy of the GNU General Public License
+##  along with Distributed Replica.  If not, see <http://www.gnu.org/licenses/>.
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+
+debug=0
+
+#cc=gcc
+#cpp=g++
+
+cc=icc
+cpp=icpc
+
+##########################################################
+## Things below this line don't usually need to be changed
+
+if [ ! -d ../bin ]; then
+  mkdir ../bin
+fi
+
+if((debug==1)); then
+
+  gflag="-g -O0"
+  onlyg="-g"
+
+  $cpp $gflag DR_server.cpp -o ../bin/DR_server -lm -lpthread
+  $cpp $gflag DR_client_comm.cpp -o ../bin/DR_client_comm -lm -lz
+  $cpp $gflag DR_tester.cpp -o ../bin/DR_tester -lm -lz -lpthread 
+  $cpp $gflag DR_commander.cpp -o ../bin/DR_commander -lz
+  $cc get_simulation_package.c $onlyg -o ../bin/get_simulation_package
+  $cpp analyse_force_database.cpp $onlyg -o ../bin/analyse_force_database -lm
+  $cc calcMSD.c $onlyg -o ../bin/calcMSD
+
+else
+
+  gflag="-O2"
+  onlyg=""
+
+
+  cat DR_server.cpp | grep -v '//##DEBUG' > tmp.cpp ; $cpp $gflag tmp.cpp -o ../bin/DR_server -lm -lpthread
+  cat DR_client_comm.cpp | grep -v '//##DEBUG' > tmp.cpp ; $cpp $gflag tmp.cpp -o ../bin/DR_client_comm -lm -lz
+  cat DR_tester.cpp | grep -v '//##DEBUG' > tmp.cpp ; $cpp $gflag tmp.cpp -o ../bin/DR_tester -lm -lz -lpthread
+  cat DR_commander.cpp | grep -v '//##DEBUG' > tmp.cpp ; $cpp $gflag tmp.cpp -o ../bin/DR_commander -lz
+  $cc get_simulation_package.c $onlyg -o ../bin/get_simulation_package
+  $cpp analyse_force_database.cpp $onlyg -o ../bin/analyse_force_database -lm 
+  $cc calcMSD.c $onlyg -o ../bin/calcMSD
+
+#  echo ""
+#  echo "Developers are aware of the warning: ignoring return value of size_t write(int, const void*, size_t), declared with attribute warn_unused_result"
+#  echo "We chose to not worry about checking the communication at the write statement, but will check the file for corruption explicitely"
+#  echo ""
+fi
+
+$cc extractDatabase.c -o ../bin/extractDatabase
+$cc extractDatabase_replica.c -o ../bin/extractDatabase_replica
+
+$cpp modTPR_absolutesteps.cpp -o ../bin/modTPR_absolutesteps
+$cpp getTPROffsets.cpp -o ../bin/getTPROffsets
+
+rm -f tmp.cpp *.o
+
+SOURCED=`pwd`
+BIND=`echo ${SOURCED} | sed "s/source/bin/"`
+echo ""
+echo "Upon successful compilation, DR executables should be located in:"
+echo "${BIND}"
+echo ""

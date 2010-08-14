@@ -1,0 +1,56 @@
+Important:
+*) The snapshot should really keep a record of Nsamesystem_uncoupled and vre secondary and primary system sizes
+
+*) Go through what Tom has suggested in read_input_script_file.h after reading the script and perhaps allow 
+    some disallowed options
+
+*) it is unclear why the tester does not exit when I give the command via '-r' to use fewer replicas
+
+*) Go through the source and see where things like Temperature have been left to an expective else statement
+   especially for move type as as there is also the NoMoves statement and it will reduce future errors if I
+   introduce new types of moves or rx coords
+
+For Later:
+*) analyze_force_database gives me a segmentation fault for NoMoves:
+		Reading data for force plots
+		Number of discrete w positions: 1
+		max time is: 1998
+		Segmentation fault (core dumped)
+
+*) Would be nice to allow automation of multiple rounds of cancellation
+   However, I am moving towards using vRE, so cancellation is not important to CN any more.
+
+*) fix the nligands routines
+   PAUSED, because:
+     look at this from read_input_script_file.h:
+       else if(strcasecmp(param,"LIGAND2")==0) column[i]=ColumnW2;
+       else if(strcasecmp(param,"FUNNEL")==0) column[i]=ColumnW2;
+     So I need to talk to Rowan and Tom about what they really mean. The script file indicates that they have
+     entirely different uses, but now it does not appear to be actually coded that way.
+
+*) test that different force constants for different restraints are set up correctly for umbrella
+   while using an exchange method other than non-monteCarlo
+
+*) make the circular coordinate read-in a little easier to use
+
+*) The sampling density is displayed as 1/2 when nligands = 2.
+     - What other things might this influence?
+
+*) add ticks at the nominal positions of plot9
+
+*) For the tester: print out the cancellation values when loading a snapshot
+
+*) Add WHAM solution to analyze_force_database
+
+*) Add ability to calculate the cancellation values via WHAM instead of simple force integration
+
+*) Add ability for analyze_force_database to calculate the MSD or some other measure of motion along the rx. coord
+
+**) move the standard definitions (e.g. Boltzmann's constant) to a single header = defs.h
+
+***
+
+*) server should catch the exit signal, write a snapshot and exit. -- clients should be smart about this too if I can...
+
+*) Check to see if this new mod for Grace in v2.1.10 will allow me to get my PagP runs going with the double PagP system.
+   it might work out of the box now.

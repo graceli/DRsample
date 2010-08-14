@@ -1,0 +1,2 @@
+#SciNet:
+ssh gpc01 "checkjob $PBS_JOBID"|grep Reservation|awk '{print $5}'|awk -F ':' '{print $1*3600+$2*60+$3}'

@@ -1,0 +1,5 @@
+#scinet
+ssh gpc01 "cd $1; qsub -o $1/output/outerr -e $1/output/outerr $1/DR_client_wrapper"
+
+#sharcnet
+#sqsub -q mpi --nompirun -r 5d -n 32 -o $1/outerr/out.%J -e $1/outerr/err.%J $1/DR_client_wrapper
